@@ -44,6 +44,7 @@ This is the on-device client used at photobooth stations. It connects to the sam
 | Backend | Supabase Kotlin SDK 2.5.4 (Auth, Postgrest, Storage) |
 | Image Loading | Coil 2.6.0 |
 | Networking | Ktor OkHttp + OkHttp 4.12.0 |
+| QR Code | ZXing 3.5.3 |
 | Serialization | kotlinx-serialization |
 | Design | Neo-brutalist (custom theme) |
 
@@ -250,14 +251,33 @@ All interactive elements have a tactile press-down animation (shadow reduces to 
 | Supabase Kotlin | 2.5.4 | Auth, Postgrest, Storage |
 | Coil | 2.6.0 | Async image loading |
 | Navigation Compose | 2.7.7 | Screen navigation |
+| ZXing | 3.5.3 | QR code generation |
 | OkHttp | 4.12.0 | HTTP client (render server fallback) |
-| Ktor | 3.0.1 | Supabase SDK transport |
+| Ktor | 2.3.12 | Supabase SDK transport |
 | kotlinx-serialization | — | JSON serialization for Supabase models |
+
+## Done Screen
+
+The Done screen (`DoneView`) displays:
+
+| Element | Description |
+|---------|-------------|
+| Final rendered image | Loaded via Coil `AsyncImage` from `final_image_url` |
+| Captured photos | Horizontally scrollable row of original camera captures |
+| QR code | Generated with ZXing, encodes `{WEB_APP_URL}/share/{share_token}` |
+| Share URL | Clickable link text below the QR code |
+
+The share URL format: `https://photobooth-os.vercel.app/share/{share_token}`
+
+### Login Responsiveness
+
+The login screen wraps content in a scrollable `Column` inside a `Box` with `imePadding()` so the form remains accessible on all screen sizes including landscape orientation where the keyboard may occlude input fields.
 
 ## Related
 
-- **Web Platform:** [askarabooth-web](https://github.com/your-org/askarabooth-web) — Dashboard, template editor, render page, share gallery
-- **Render Page:** `https://your-app.com/render/{sessionId}` — Client-side template compositing via html2canvas
+- **Web Platform:** [photobooth-os](https://github.com/annasabdurrahman354/photobooth-os-web) — Dashboard, template editor, render page, share gallery
+- **Share Page:** `https://photobooth-os.vercel.app/share/{shareToken}` — Download & view final photos
+- **Render Page:** `https://photobooth-os.vercel.app/render/{sessionId}` — Client-side template compositing via html2canvas
 
 ## License
 
