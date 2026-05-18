@@ -2,7 +2,9 @@ package com.askara.photobooth.ui.screen
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color as AndroidColor
 import android.os.Handler
 import android.os.Looper
 import android.webkit.JavascriptInterface
@@ -20,6 +22,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +41,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -63,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import coil.compose.AsyncImage
 import com.askara.photobooth.BuildConfig
 import com.askara.photobooth.ui.theme.Blue600
 import com.askara.photobooth.ui.theme.BrutalStyle
@@ -76,7 +84,12 @@ import com.askara.photobooth.ui.theme.White
 import com.askara.photobooth.ui.theme.Yellow400
 import com.askara.photobooth.viewmodel.SessionState
 import com.askara.photobooth.viewmodel.SessionViewModel
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SessionScreen(
@@ -719,68 +732,184 @@ private fun RenderingView(viewModel: SessionViewModel, sessionId: String) {
 @Composable
 private fun DoneView(viewModel: SessionViewModel, onDone: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
+    val shareToken = uiState.session?.share_token
+    val shareUrl = if (shareToken != null) "${BuildConfig.WEB_APP_URL}/share/$shareToken" else null
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    val statusBarPadding = if (isPortrait) {
+        WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    } else {
+        0.dp
+    }
 
-    Box(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        contentAlignment = Alignment.Center
+    var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(shareUrl) {
+        if (shareUrl != null) {
+            qrBitmap = withContext(Dispatchers.Default) { generateQrBitmap(shareUrl, 400) }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp)
+            .padding(top = 24.dp + statusBarPadding, bottom = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "ALL DONE!",
+            fontSize = 36.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = (-0.5).sp,
+            color = Slate950
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "YOUR PHOTOS ARE READY",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 2.sp,
+            color = Slate500
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (uiState.finalImageUrl != null) {
+            Surface(
+                shape = BrutalStyle.CardShape,
+                color = White,
+                border = BrutalStyle.CardBorder,
+                shadowElevation = BrutalStyle.CardShadow,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                AsyncImage(
+                    model = uiState.finalImageUrl,
+                    contentDescription = "Final Result",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(3f / 4f),
+                    contentScale = ContentScale.Fit
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+
+        if (uiState.captures.isNotEmpty()) {
             Text(
-                text = "ALL DONE!",
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-0.5).sp,
-                color = Slate950
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "YOUR PHOTOS ARE READY",
+                text = "CAPTURED PHOTOS",
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp,
                 color = Slate500
             )
-
-            if (uiState.session?.share_token != null) {
-                Spacer(modifier = Modifier.height(24.dp))
-                Surface(
-                    shape = BrutalStyle.ButtonShape,
-                    color = White,
-                    border = BrutalStyle.ButtonBorder,
-                    shadowElevation = BrutalStyle.ButtonShadow
-                ) {
-                    Text(
-                        text = "SHARE: ${uiState.session!!.share_token}",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 2.sp,
-                        color = Blue600,
-                        modifier = Modifier.padding(16.dp)
-                    )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+            ) {
+                uiState.captures.forEachIndexed { index, bytes ->
+                    val bitmap = remember(bytes) {
+                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    }
+                    Surface(
+                        shape = BrutalStyle.CardShape,
+                        color = White,
+                        border = BrutalStyle.CardBorder,
+                        shadowElevation = BrutalStyle.ButtonShadow
+                    ) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Capture $index",
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
             }
+            Spacer(modifier = Modifier.height(20.dp))
+        }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
+        if (shareUrl != null && qrBitmap != null) {
+            Text(
+                text = "SCAN TO DOWNLOAD",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 2.sp,
+                color = Slate500
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             Surface(
-                onClick = {
-                    viewModel.resetSession()
-                    onDone()
-                },
+                shape = BrutalStyle.CardShape,
+                color = White,
+                border = BrutalStyle.CardBorder,
+                shadowElevation = BrutalStyle.CardShadow
+            ) {
+                Image(
+                    bitmap = qrBitmap!!.asImageBitmap(),
+                    contentDescription = "QR Code",
+                    modifier = Modifier
+                        .size(200.dp)
+                        .padding(12.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Surface(
                 shape = BrutalStyle.ButtonShape,
-                color = Blue600,
+                color = White,
                 border = BrutalStyle.ButtonBorder,
                 shadowElevation = BrutalStyle.ButtonShadow
             ) {
                 Text(
-                    text = "DONE",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp,
-                    color = White,
-                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 14.dp)
+                    text = shareUrl,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                    color = Blue600,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    textAlign = TextAlign.Center
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Surface(
+            onClick = {
+                viewModel.resetSession()
+                onDone()
+            },
+            shape = BrutalStyle.ButtonShape,
+            color = Blue600,
+            border = BrutalStyle.ButtonBorder,
+            shadowElevation = BrutalStyle.ButtonShadow
+        ) {
+            Text(
+                text = "DONE",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 2.sp,
+                color = White,
+                modifier = Modifier.padding(horizontal = 32.dp, vertical = 14.dp)
+            )
+        }
     }
+}
+
+private fun generateQrBitmap(content: String, size: Int): Bitmap {
+    val hints = mapOf(EncodeHintType.MARGIN to 1)
+    val bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size, hints)
+    val pixels = IntArray(size * size)
+    for (y in 0 until size) {
+        for (x in 0 until size) {
+            pixels[y * size + x] = if (bitMatrix[x, y]) AndroidColor.BLACK else AndroidColor.WHITE
+        }
+    }
+    return Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888)
 }

@@ -4,12 +4,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -52,152 +58,165 @@ fun LoginScreen(
         onLoginSuccess()
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .imePadding(),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "PHOTOBOOTH",
-            fontSize = 36.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = (-0.5).sp,
-            color = Slate950
-        )
-        Text(
-            text = "OS",
-            fontSize = 36.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 2.sp,
-            color = Blue600
-        )
-
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Surface(
-            shape = BrutalStyle.CardShape,
-            color = White,
-            border = BrutalStyle.CardBorder,
-            shadowElevation = BrutalStyle.CardShadow,
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 32.dp)
+                .padding(
+                    top = 32.dp,
+                    bottom = 32.dp + WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding()
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    text = "SIGN IN",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp,
-                    color = Slate800
-                )
+            Text(
+                text = "PHOTOBOOTH",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = (-0.5).sp,
+                color = Slate950
+            )
+            Text(
+                text = "OS",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 2.sp,
+                color = Blue600
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-                Text(
-                    text = "EMAIL",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp,
-                    color = Slate500,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(BrutalStyle.InputShadow, BrutalStyle.ButtonShape, ambientColor = BrutalShadow, spotColor = BrutalShadow),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    shape = BrutalStyle.ButtonShape,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Slate950,
-                        unfocusedTextColor = Slate950,
-                        focusedBorderColor = Slate950,
-                        unfocusedBorderColor = Slate950,
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        cursorColor = Slate950
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "PASSWORD",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp,
-                    color = Slate500,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(BrutalStyle.InputShadow, BrutalStyle.ButtonShape, ambientColor = BrutalShadow, spotColor = BrutalShadow),
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    shape = BrutalStyle.ButtonShape,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Slate950,
-                        unfocusedTextColor = Slate950,
-                        focusedBorderColor = Slate950,
-                        unfocusedBorderColor = Slate950,
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        cursorColor = Slate950
-                    )
-                )
-
-                if (uiState.error != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
+            Surface(
+                shape = BrutalStyle.CardShape,
+                color = White,
+                border = BrutalStyle.CardBorder,
+                shadowElevation = BrutalStyle.CardShadow,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
                     Text(
-                        text = uiState.error!!,
+                        text = "SIGN IN",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 2.sp,
+                        color = Slate800
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "EMAIL",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
-                        letterSpacing = 1.sp,
-                        color = Red500
+                        letterSpacing = 2.sp,
+                        color = Slate500,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Surface(
-                    onClick = {
-                        if (email.isNotBlank() && password.isNotBlank()) {
-                            authViewModel.signIn(email, password)
-                        }
-                    },
-                    shape = BrutalStyle.ButtonShape,
-                    color = Blue600,
-                    border = BrutalStyle.ButtonBorder,
-                    shadowElevation = BrutalStyle.ButtonShadow,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 14.dp),
-                        contentAlignment = Alignment.Center
+                            .shadow(BrutalStyle.InputShadow, BrutalStyle.ButtonShape, ambientColor = BrutalShadow, spotColor = BrutalShadow),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        shape = BrutalStyle.ButtonShape,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Slate950,
+                            unfocusedTextColor = Slate950,
+                            focusedBorderColor = Slate950,
+                            unfocusedBorderColor = Slate950,
+                            focusedContainerColor = White,
+                            unfocusedContainerColor = White,
+                            cursorColor = Slate950
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "PASSWORD",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 2.sp,
+                        color = Slate500,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(BrutalStyle.InputShadow, BrutalStyle.ButtonShape, ambientColor = BrutalShadow, spotColor = BrutalShadow),
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        shape = BrutalStyle.ButtonShape,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Slate950,
+                            unfocusedTextColor = Slate950,
+                            focusedBorderColor = Slate950,
+                            unfocusedBorderColor = Slate950,
+                            focusedContainerColor = White,
+                            unfocusedContainerColor = White,
+                            cursorColor = Slate950
+                        )
+                    )
+
+                    if (uiState.error != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = uiState.error!!,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.sp,
+                            color = Red500
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Surface(
+                        onClick = {
+                            if (email.isNotBlank() && password.isNotBlank()) {
+                                authViewModel.signIn(email, password)
+                            }
+                        },
+                        shape = BrutalStyle.ButtonShape,
+                        color = Blue600,
+                        border = BrutalStyle.ButtonBorder,
+                        shadowElevation = BrutalStyle.ButtonShadow,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = White,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(
-                                text = "LOGIN",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 2.sp,
-                                color = White
-                            )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (uiState.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text(
+                                    text = "LOGIN",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Black,
+                                    letterSpacing = 2.sp,
+                                    color = White
+                                )
+                            }
                         }
                     }
                 }
